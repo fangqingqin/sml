@@ -176,9 +176,15 @@ class GPR:
 
         if return_std: 
             # # the standard-deviation of the predictive distribution atthe query points is returned along with the mean.
+            K_self = self.kernel(X)
+            
+            # Solve for v
             v = slinalg.solve_triangular(L, K_trans, lower=True)
-            print("self.kernel(X, X) - np.sum(v ** 2, axis=0", self.kernel(X, X) - np.sum(v ** 2, axis=0))
-            y_std = np.sqrt(self.kernel(X, X) - np.sum(v ** 2, axis=0))
+            
+            # Predictive variance
+            y_var = np.diag(K_self) - np.sum(v**2, axis=0)
+            y_std = np.sqrt(y_var)
+            
             return y_mean, y_std
     
         return y_mean
