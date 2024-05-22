@@ -44,7 +44,6 @@ class GPR:
                  ) -> None:
 
         self.kernel = kernel
-
         self.noise_level = noise_level
         self.n_restarts = n_restarts
         self.random_state = random_state(4)
@@ -105,21 +104,21 @@ class GPR:
 
         # HINT I: You should run the optimisation (n_restarts) time for optimum results.
 
-        # set initial values 
+        # set initial values
         self.X_train = X
-        # normalize the input values
-        self.X_train = (self.X_train - np.mean(self.X_train, axis=0)) / np.std(self.X_train, axis=0)
         self.y_train = y
+
+        self.X_train = (self.X_train - np.mean(self.X_train, axis=0)) / np.std(self.X_train, axis=0)
         self.y_train = (self.y_train - np.mean(self.y_train, axis=0)) / np.std(self.y_train, axis=0)
-        
+        # print("self.X_train", self.X_train)
+        # print("self.y_train", self.y_train)
+
         opt_lml = -np.inf
         opt_theta = None
 
-        # bounds = [[1e-5, 1], [1e-5, 1]]
         bounds = self.kernel.get_bounds()
-        
+        # bounds = [[1e-5, 10], [1e-5, 10]]
         initial_theta = self.kernel.get_theta()
-        # print("initial_theta", initial_theta)
 
         # nteration of n_restarts times
         for i in range(self.n_restarts):
@@ -176,6 +175,11 @@ class GPR:
 
         if return_std: 
             # # the standard-deviation of the predictive distribution atthe query points is returned along with the mean.
+            # v = slinalg.solve_triangular(L, K_trans, lower=True)
+            # print("self.kernel(X, X) - np.sum(v ** 2, axis=0", self.kernel(X, X) - np.sum(v ** 2, axis=0))
+            # y_std = np.sqrt(self.kernel(X, X) - np.sum(v ** 2, axis=0))
+            # return y_mean, y_std
+            # Compute K(X, X)
             K_self = self.kernel(X)
             
             # Solve for v

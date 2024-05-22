@@ -34,8 +34,10 @@ def probability_improvement(X: np.ndarray, X_sample: np.ndarray,
     # Implement the probability of improvement acquisition function
 
     # Predict mean and standard deviation at points X
-    mu, sigma = gpr.predict(X, return_std=True)
 
+
+    mu, sigma = gpr.predict(X, return_std=True)
+    
     # Current best observation
     mu_sample = gpr.predict(X_sample)
 
@@ -44,8 +46,7 @@ def probability_improvement(X: np.ndarray, X_sample: np.ndarray,
     
     mu = mu.ravel()
     sigma = sigma.ravel()
-    # sigma = sigma.reshape(-1, 1)
-    
+
     # Calculate the improvement
     with np.errstate(divide='warn'):
         imp = mu - mu_sample_opt - xi
@@ -87,13 +88,14 @@ def expected_improvement(X: np.ndarray, X_sample: np.ndarray,
 
     # Predict mean and standard deviation at points X
     mu, sigma = gpr.predict(X, return_std=True)
+    
+    mu_sample = gpr.predict(X_sample)
+
+    # Get the maximum value of the current best observation
+    mu_sample_opt = np.max(mu_sample)
+    
     mu = mu.ravel()
     sigma = sigma.ravel()
-
-    # Current best observation
-    mu_sample = gpr.predict(X_sample)
-    # normalize the mu_sample
-    mu_sample_opt = np.max(mu_sample)
     
     # Calculate the improvement
     with np.errstate(divide='warn'):

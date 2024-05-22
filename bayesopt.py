@@ -46,7 +46,6 @@ class BO:
         bounds: tuple
             Bounds for variable X 
     """
-
     def __init__(self, X_init: np.ndarray, Y_init: np.ndarray, f: Callable,
                  noise_level: float, bounds: Tuple, n_iter: int, xi: float, title: str, **kwargs) -> None:
         
@@ -62,7 +61,7 @@ class BO:
         # TODO Q2.7
         # ------------------------------------------------------------------------
         # FIXME
-        self.xi_scheduler = Scheduler(initial_value=xi, decay_factor=1, step_size=5, min_value=0.01)
+        self.xi_scheduler = Scheduler(initial_value=xi, decay_factor=1, step_size=1, min_value=0.01)
         # ------------------------------------------------------------------------
 
 
@@ -73,8 +72,9 @@ class BO:
         # TODO Q2.8b
         # ------------------------------------------------------------------------
         # FIXME
-        # m = Matern(nu=2.5, length_scale=1, variance=2.0, variance_bounds = (1e-5, 1), length_scale_bounds = (1e-5, 1e2))
-        m = Matern(nu=2.5, length_scale=1, variance=1)
+        m = Matern(nu=2.5, length_scale=1, variance=2.0, variance_bounds=(1e-5, 1.0), length_scale_bounds=(1e-5, 0.6))
+
+        # m = Matern(nu=1.5, length_scale=1, variance=2.0, variance_bounds = (1e-5, 1), length_scale_bounds = (1e-5, 1e2))
         # ------------------------------------------------------------------------
         self.gpr = GPR(kernel=m, noise_level=self.noise_level, n_restarts=10)
 
@@ -150,16 +150,14 @@ class BO:
         self.X_sample = np.vstack((self.X_sample, X_next))
         Y_next = self.f(X_next) + self.noise_level * np.random.randn(*X_next.shape)
         self.Y_sample = np.vstack((self.Y_sample, Y_next))
-
-        # print("X_sample: ", self.X_sample)
-        # print("Y_sample: ", self.Y_sample)
+        print("X_sample: ", self.X_sample)
+        print("Y_sample: ", self.Y_sample)
 
         # DO NOT CHANGE
         # Plot samples, surrogate function, noise-free objective and next sampling location
         plt.title(f'Iteration {step+1} | xi = ' + str(self.xi))
 
         mu, std = self.gpr.predict(self.X, return_std=True)
-    
         for collection in self.ax1.collections:
             collection.remove()
         self.ax1_lines[0].set_data(self.X_sample, self.Y_sample)
@@ -170,9 +168,13 @@ class BO:
                               color='#82bfbc')
         acq = acquisition(self.X, self.X_sample, self.gpr, self.xi)
         self.ax2_lines[0].set_data(self.X, acq)
+        print("np.argmax(acq)", np.argmax(acq))
+        print("self.X[np.argmax(acq)]", self.X[np.argmax(acq)])
+        print("[max(acq)]", [max(acq)])
         self.ax2_lines[1].set_data([self.X[np.argmax(acq)]], [max(acq)])
 
         return self.ax1_lines + self.ax2_lines
+    
 
     def sample_next_point(self, acquisition_func: Callable, gpr: object,
                           xi: float, n_restarts: int = 25) -> np.ndarray:
@@ -210,8 +212,6 @@ class BO:
 
             res = minimize(lambda x: -acquisition_func(x.reshape(1, -1), self.X_sample, gpr, xi),
                            x0=x0, bounds=bounds, method='L-BFGS-B')
-            # res = minimize(lambda x: -acquisition_func(x.reshape(1, -1), self.X_sample, gpr, xi),
-            #    x0=x0, bounds=bounds, method='L-BFGS-B', options={'ftol': 1e-9, 'gtol': 1e-9})
 
             if res.fun < best_acquisition_value:
                 best_acquisition_value = res.fun

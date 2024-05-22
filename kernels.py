@@ -54,7 +54,6 @@ class Matern:
         theta : ndarray of shape (n_dims,)
             The log-transformed hyperparameters of the kernel
         """
-        
         theta = [getattr(self, hp['name']) for hp in self.hyperparameters]
         return np.hstack(theta)
 
