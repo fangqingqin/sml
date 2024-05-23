@@ -55,6 +55,7 @@ class Matern:
             The log-transformed hyperparameters of the kernel
         """
         theta = [getattr(self, hp['name']) for hp in self.hyperparameters]
+        # print("theta = ", theta)
         return np.hstack(theta)
 
     def set_theta(self, theta):

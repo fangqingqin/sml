@@ -72,10 +72,15 @@ class GPR:
         """
         # TODO Q2.3
         # Implement an L-BFGS-B optimisation algorithm using scipy.minimize built-in function
-        result = minimize(fun=obj_func, x0=initial_theta, bounds=bounds, method='L-BFGS-B')
+
+        def negative_log_likelihood(theta):
+            return -obj_func(theta)
+        result = minimize(fun=negative_log_likelihood, x0=initial_theta, bounds=bounds, method='L-BFGS-B')
         theta_opt = result.x
         func_min = result.fun
         return theta_opt, func_min
+    
+
 
     def update(self, X: np.ndarray, y: np.ndarray) -> GPR:
         """
@@ -108,13 +113,14 @@ class GPR:
         self.X_train = X
         self.y_train = y
 
-        self.X_train = (self.X_train - np.mean(self.X_train, axis=0)) / np.std(self.X_train, axis=0)
-        self.y_train = (self.y_train - np.mean(self.y_train, axis=0)) / np.std(self.y_train, axis=0)
+        # self.X_train = (self.X_train - np.mean(self.X_train, axis=0)) / np.std(self.X_train, axis=0)
+        # self.y_train = (self.y_train - np.mean(self.y_train, axis=0)) / np.std(self.y_train, axis=0)
         # print("self.X_train", self.X_train)
         # print("self.y_train", self.y_train)
 
         opt_lml = -np.inf
         opt_theta = None
+
 
         bounds = self.kernel.get_bounds()
         # bounds = [[1e-5, 10], [1e-5, 10]]
@@ -160,8 +166,7 @@ class GPR:
         # TODO Q2.3
         # Implement the predictive distribution of the Gaussian Process Regression
         # by using the Algorithm (1) from the assignment sheet.
-
-        # K = K(x,x) + self.noise_level * I
+        # return y_mean
         K = self.kernel(self.X_train) + self.noise_level * np.eye(len(self.X_train))
         # L = cholesky(K)
         L = np.linalg.cholesky(K)
@@ -216,14 +221,16 @@ class GPR:
         # compute the log marginal likelihood by using the Algorithm (1) from the assignment sheet.
         self.kernel.set_theta(theta)
         
+        X = self.X_train
+        n = len(self.X_train)
         # K = K(x,x) + self.noise_level * I
-        K = self.kernel(self.X_train) + self.noise_level * np.eye(len(self.X_train))
+        K = self.kernel(X, X) + self.noise_level * np.eye(n)
 
         L = np.linalg.cholesky(K)
         # alpha = (L^T) / (L / y)
-        alpha = slinalg.solve_triangular(L.T, slinalg.solve_triangular(L, self.y_train, lower=True))
+        alpha = slinalg.solve(L.T, slinalg.solve(L, self.y_train, lower=True))
 
         # likelihood = -1/2 * y^T * alpha - sum log(det(L)) - n/2 * log(2 * pi)
-        n = len(self.X_train)
+
         log_likelihood = -0.5 * np.dot(self.y_train.T, alpha) - np.sum(np.log(np.diag(L))) - n / 2 * np.log(2 * np.pi)
         return log_likelihood

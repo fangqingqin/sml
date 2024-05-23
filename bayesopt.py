@@ -24,6 +24,9 @@ class Scheduler:
         self.value *= self.decay_factor ** (current_step // self.step_size)
         if self.value < self.min_value:
             self.value = self.min_value
+        # self.value = min(self.value * self.decay_factor ** (current_step // self.step_size), self.min_value)
+        # print("self.value = ", self.value)
+        return self.value
 
 class BO:
     """
@@ -61,7 +64,7 @@ class BO:
         # TODO Q2.7
         # ------------------------------------------------------------------------
         # FIXME
-        self.xi_scheduler = Scheduler(initial_value=xi, decay_factor=1, step_size=1, min_value=0.01)
+        self.xi_scheduler = Scheduler(initial_value=xi, decay_factor=0.99, step_size=1, min_value=0.01)
         # ------------------------------------------------------------------------
 
 
@@ -72,7 +75,7 @@ class BO:
         # TODO Q2.8b
         # ------------------------------------------------------------------------
         # FIXME
-        m = Matern(nu=2.5, length_scale=1, variance=2.0, variance_bounds=(1e-5, 1.0), length_scale_bounds=(1e-5, 0.6))
+        m = Matern(nu=2.5, length_scale=0.95, variance=1.5, variance_bounds=(1e-3, 3), length_scale_bounds=(1e-4, 1))
 
         # m = Matern(nu=1.5, length_scale=1, variance=2.0, variance_bounds = (1e-5, 1), length_scale_bounds = (1e-5, 1e2))
         # ------------------------------------------------------------------------
@@ -144,14 +147,15 @@ class BO:
         self.gpr.update(self.X_sample, self.Y_sample)
         self.xi_scheduler.step(step)
         self.xi = self.xi_scheduler.value
+        # print("xi = ", self.xi)
 
         X_next = self.sample_next_point(acquisition, self.gpr, self.xi)
 
         self.X_sample = np.vstack((self.X_sample, X_next))
         Y_next = self.f(X_next) + self.noise_level * np.random.randn(*X_next.shape)
         self.Y_sample = np.vstack((self.Y_sample, Y_next))
-        print("X_sample: ", self.X_sample)
-        print("Y_sample: ", self.Y_sample)
+        # print("X_sample: ", self.X_sample)
+        # print("Y_sample: ", self.Y_sample)
 
         # DO NOT CHANGE
         # Plot samples, surrogate function, noise-free objective and next sampling location
@@ -168,9 +172,9 @@ class BO:
                               color='#82bfbc')
         acq = acquisition(self.X, self.X_sample, self.gpr, self.xi)
         self.ax2_lines[0].set_data(self.X, acq)
-        print("np.argmax(acq)", np.argmax(acq))
-        print("self.X[np.argmax(acq)]", self.X[np.argmax(acq)])
-        print("[max(acq)]", [max(acq)])
+        # print("np.argmax(acq)", np.argmax(acq))
+        # print("self.X[np.argmax(acq)]", self.X[np.argmax(acq)])
+        # print("[max(acq)]", [max(acq)])
         self.ax2_lines[1].set_data([self.X[np.argmax(acq)]], [max(acq)])
 
         return self.ax1_lines + self.ax2_lines
@@ -216,6 +220,7 @@ class BO:
             if res.fun < best_acquisition_value:
                 best_acquisition_value = res.fun
                 best_x = res.x
+            # print("res.fun = ", res.fun, ", best_acquisition_value = ", best_acquisition_value, ", best_x = ", best_x)
 
         return best_x.reshape(-1, 1)
     
